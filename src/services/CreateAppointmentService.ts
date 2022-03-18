@@ -22,7 +22,7 @@ class CreateAppointmentService {
     if ( findAppointmentInSameDate) {
       throw Error ('essa horário não está disponível');
     }
-    console.log('DATA BOOKED', findAppointmentInSameDate)
+
     const appointment = this.appointmentsRepository.create({
       provider,
       date: appointmentDate
