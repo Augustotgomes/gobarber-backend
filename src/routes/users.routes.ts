@@ -1,31 +1,56 @@
 import { Router } from 'express';
+import multer from 'multer';
+import uploadConfig from '../config/upload';
+
 import CreateUserService from '../services/CreateUserService';
+import UpdateUserAvatarService from '../services/UpdateUserAvatarService';
+
+import ensureAuthenticated from '../middlewares/ensureAuthenticated';
 
 
-const userRouter = Router();
+const usersRouter = Router();
+const upload = multer(uploadConfig);
 
 
-userRouter.post('/', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+usersRouter.post('/', async (request, response) => {
 
-    const createUser = new CreateUserService();
+  const { name, email, password } = request.body;
 
-    const user = await createUser.execute({
-      name,
-      email,
-      password,
+  const createUser = new CreateUserService();
+
+  const user = await createUser.execute({
+    name,
+    email,
+    password,
+  });
+
+  // @ts-expect-error deletando password para não ser exibido no response
+  delete user.password;
+
+  return response.json(user);
+
+});
+
+usersRouter.patch(
+  '/avatar',
+  ensureAuthenticated,
+  upload.single('avatar'),
+  async (request, response) => {
+
+    const updateUserAvatar = new UpdateUserAvatarService();
+
+    const user = await updateUserAvatar.execute({
+      user_id: request.user.id,
+      // @ts-expect-error Verificação de arquivo existente ja esta sendo feita
+      // no service
+      avatarFilename: request.file.filename,
     });
 
     // @ts-expect-error deletando password para não ser exibido no response
     delete user.password;
 
-    return res.json(user);
-  }catch(err:any) {
-    return res
-    .status(400)
-    .json({error: err.message});
-  }
-});
+    return response.json(user);
 
-export default userRouter;
+})
+
+export default usersRouter;

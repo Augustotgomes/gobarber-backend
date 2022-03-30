@@ -1,6 +1,9 @@
 import { getRepository } from 'typeorm';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
+import auhtConfig from '../config/auth';
+
+import AppError from '../errors/AppErrors';
 
 import User from '../models/User';
 
@@ -23,18 +26,20 @@ class AuthenticateUserService {
     });
 
     if(!user){
-      throw new Error('Email ou senha está incorreto');
+      throw new AppError('Email ou senha está incorreto', 401);
     }
 
     const passwordMatched = await compare(password, user.password);
 
     if(!passwordMatched){
-      throw new Error('Email ou senha está incorreto');
+      throw new AppError('Email ou senha está incorreto', 401);
     }
 
-    const token = sign({}, '80869575fdddeff3e94c594c5e19a968', {
+    const { secret, expiresIn } = auhtConfig.jwt
+
+    const token = sign({}, secret, {
       subject: user.id,
-      expiresIn: '1d',
+      expiresIn,
     });
 
     return {
